@@ -44,6 +44,12 @@ func (form *Form) Render(name string, attrs ...string) template.HTML {
 	return field.RenderFull(attrs)
 }
 
+func (form *Form) RenderLabel(name string) template.HTML {
+	field := form.fields[name]
+
+	return field.RenderLabel()
+}
+
 func (form *Form) RenderInput(name string, attrs ...string) template.HTML {
 	field := form.fields[name]
 
