@@ -3,27 +3,19 @@ package wtforms
 import (
 	"fmt"
 	"html/template"
+	"strings"
 )
 
-func renderFull(field IField, attrs []string) template.HTML {
-	errClass := ""
-	if field.HasErrors() {
-		errClass = " error"
-	}
-	return template.HTML(fmt.Sprintf(`<div class="control-group%s">%s<div class="controls">%s%s</div></div>`, errClass, field.RenderLabel(), field.RenderInput(attrs), field.RenderErrors()))
-}
-
 type IField interface {
-	RenderLabel() template.HTML
-	RenderInput(attrs []string) template.HTML
+	RenderLabel(attrs ...string) template.HTML
+	RenderInput(attrs ...string) template.HTML
 	Validate() bool
 	GetName() string
 	GetValue() string
 	SetValue(value string)
 	IsName(name string) bool
-	RenderFull(attrs []string) template.HTML
 	HasErrors() bool
-	RenderErrors() string
+	RenderErrors() template.HTML
 	AddError(err string)
 }
 
@@ -35,15 +27,15 @@ type BaseField struct {
 	Validators []IValidator
 }
 
-func (field *BaseField) RenderLabel() template.HTML {
-	return template.HTML(fmt.Sprintf("<label class=\"control-label\" for=\"%s\">%s</label>", field.Name, field.Label))
+func (field *BaseField) RenderLabel(attrs ...string) template.HTML {
+	return template.HTML(fmt.Sprintf("<label for=\"%s\" %s>%s</label>", field.Name, strings.Join(attrs, " "), field.Label))
 }
 
 func (field *BaseField) HasErrors() bool {
 	return len(field.Errors) > 0
 }
 
-func (field *BaseField) RenderInput(attrs []string) template.HTML {
+func (field *BaseField) RenderInput(attrs ...string) template.HTML {
 	return template.HTML("")
 }
 
@@ -55,13 +47,13 @@ func (field *BaseField) AddError(err string) {
 	field.Errors = append(field.Errors, err)
 }
 
-func (field *BaseField) RenderErrors() string {
+func (field *BaseField) RenderErrors() template.HTML {
 	result := ""
 	for _, err := range field.Errors {
 		result += fmt.Sprintf(`<span class="help-block">%s</span>`, err)
 	}
 
-	return result
+	return template.HTML(result)
 }
 
 func (field *BaseField) Validate() bool {
@@ -107,7 +99,7 @@ type TextField struct {
 	BaseField
 }
 
-func (field *TextField) RenderInput(attrs []string) template.HTML {
+func (field *TextField) RenderInput(attrs ...string) template.HTML {
 	attrsStr := ""
 	if len(attrs) > 0 {
 		for _, attr := range attrs {
@@ -115,10 +107,6 @@ func (field *TextField) RenderInput(attrs []string) template.HTML {
 		}
 	}
 	return template.HTML(fmt.Sprintf(`<input type="text" value="%s" name=%q id=%q%s>`, field.Value, field.Name, field.Name, attrsStr))
-}
-
-func (field *TextField) RenderFull(attrs []string) template.HTML {
-	return renderFull(field, attrs)
 }
 
 func NewTextField(name string, label string, value string, validators ...IValidator) *TextField {
@@ -135,7 +123,7 @@ type PasswordField struct {
 	BaseField
 }
 
-func (field *PasswordField) RenderInput(attrs []string) template.HTML {
+func (field *PasswordField) RenderInput(attrs ...string) template.HTML {
 	attrsStr := ""
 	if len(attrs) > 0 {
 		for _, attr := range attrs {
@@ -154,15 +142,11 @@ func NewPasswordField(name string, label string, validators ...IValidator) *Pass
 	return &field
 }
 
-func (field *PasswordField) RenderFull(attrs []string) template.HTML {
-	return renderFull(field, attrs)
-}
-
 type TextArea struct {
 	BaseField
 }
 
-func (field *TextArea) RenderInput(attrs []string) template.HTML {
+func (field *TextArea) RenderInput(attrs ...string) template.HTML {
 	attrsStr := ""
 	if len(attrs) > 0 {
 		for _, attr := range attrs {
@@ -171,10 +155,6 @@ func (field *TextArea) RenderInput(attrs []string) template.HTML {
 	}
 
 	return template.HTML(fmt.Sprintf(`<textarea id=%q name=%q%s>%s</textarea>`, field.Name, field.Name, attrsStr, field.Value))
-}
-
-func (field *TextArea) RenderFull(attrs []string) template.HTML {
-	return renderFull(field, attrs)
 }
 
 func NewTextArea(name string, label string, value string, validators ...IValidator) *TextArea {
@@ -197,7 +177,7 @@ type SelectField struct {
 	Choices []Choice
 }
 
-func (field *SelectField) RenderInput(attrs []string) template.HTML {
+func (field *SelectField) RenderInput(attrs ...string) template.HTML {
 	attrsStr := ""
 	if len(attrs) > 0 {
 		for _, attr := range attrs {
@@ -216,10 +196,6 @@ func (field *SelectField) RenderInput(attrs []string) template.HTML {
 	return template.HTML(fmt.Sprintf(`<select id=%q name=%q%s>%s</select>`, field.Name, field.Name, attrsStr, options))
 }
 
-func (field *SelectField) RenderFull(attrs []string) template.HTML {
-	return renderFull(field, attrs)
-}
-
 func NewSelectField(name string, label string, choices []Choice, defaultValue string, validators ...IValidator) *SelectField {
 	field := SelectField{}
 	field.Name = name
@@ -235,12 +211,8 @@ type HiddenField struct {
 	BaseField
 }
 
-func (field *HiddenField) RenderInput(attrs []string) template.HTML {
+func (field *HiddenField) RenderInput(attrs ...string) template.HTML {
 	return template.HTML(fmt.Sprintf(`<input type="hidden" value=%q name=%q id=%q>`, field.Value, field.Name, field.Name))
-}
-
-func (field *HiddenField) RenderFull(attrs []string) template.HTML {
-	return field.RenderInput(attrs)
 }
 
 func NewHiddenField(name string, value string) *HiddenField {

@@ -9,6 +9,7 @@ Golang的表单包
 package wtforms
 
 import (
+	"errors"
 	"html/template"
 	"net/http"
 	"strings"
@@ -38,22 +39,16 @@ func (form *Form) Validate(r *http.Request) bool {
 	return result
 }
 
-func (form *Form) Render(name string, attrs ...string) template.HTML {
+func (form *Form) RenderLabel(name string, attrs ...string) template.HTML {
 	field := form.fields[name]
 
-	return field.RenderFull(attrs)
-}
-
-func (form *Form) RenderLabel(name string) template.HTML {
-	field := form.fields[name]
-
-	return field.RenderLabel()
+	return field.RenderLabel(attrs...)
 }
 
 func (form *Form) RenderInput(name string, attrs ...string) template.HTML {
 	field := form.fields[name]
 
-	return field.RenderInput(attrs)
+	return field.RenderInput(attrs...)
 }
 
 func (form *Form) Value(name string) string {
@@ -67,4 +62,14 @@ func (form *Form) SetValue(name, value string) {
 func (form *Form) AddError(name, err string) {
 	field := form.fields[name]
 	field.AddError(err)
+}
+
+func (form *Form) Field(name string) (IField, error) {
+	field, ok := form.fields[name]
+
+	if !ok {
+		return nil, errors.New("not this field: " + name)
+	}
+
+	return field, nil
 }
