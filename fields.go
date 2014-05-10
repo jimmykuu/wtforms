@@ -17,13 +17,14 @@ type IField interface {
 	HasErrors() bool
 	RenderErrors() template.HTML
 	AddError(err string)
+	Errors() []string
 }
 
 type BaseField struct {
 	Name       string
 	Label      string
 	Value      string
-	Errors     []string
+	errors     []string
 	Validators []IValidator
 }
 
@@ -32,7 +33,7 @@ func (field *BaseField) RenderLabel(attrs ...string) template.HTML {
 }
 
 func (field *BaseField) HasErrors() bool {
-	return len(field.Errors) > 0
+	return len(field.errors) > 0
 }
 
 func (field *BaseField) RenderInput(attrs ...string) template.HTML {
@@ -44,12 +45,12 @@ func (field *BaseField) GetName() string {
 }
 
 func (field *BaseField) AddError(err string) {
-	field.Errors = append(field.Errors, err)
+	field.errors = append(field.errors, err)
 }
 
 func (field *BaseField) RenderErrors() template.HTML {
 	result := ""
-	for _, err := range field.Errors {
+	for _, err := range field.errors {
 		result += fmt.Sprintf(`<span class="help-block">%s</span>`, err)
 	}
 
@@ -61,7 +62,7 @@ func (field *BaseField) Validate() bool {
 	for _, validator := range field.Validators {
 		if _, ok := validator.(Required); ok {
 			if ok, message := validator.CleanData(field.GetValue()); !ok {
-				field.Errors = append(field.Errors, message)
+				field.errors = append(field.errors, message)
 				return false
 			}
 		}
@@ -72,7 +73,7 @@ func (field *BaseField) Validate() bool {
 	for _, validator := range field.Validators {
 		if ok, message := validator.CleanData(field.GetValue()); !ok {
 			result = false
-			field.Errors = append(field.Errors, message)
+			field.errors = append(field.errors, message)
 		}
 	}
 
@@ -93,6 +94,10 @@ func (field *BaseField) IsName(name string) bool {
 
 func (field *BaseField) RenderFull(attrs []string) template.HTML {
 	return template.HTML("")
+}
+
+func (field *BaseField) Errors() []string {
+	return field.errors
 }
 
 type TextField struct {
